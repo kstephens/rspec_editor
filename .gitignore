@@ -7,6 +7,7 @@
 /pkg/
 /spec/reports/
 /tmp/
+/.rspec.error.log
 *.bundle
 *.so
 *.o
