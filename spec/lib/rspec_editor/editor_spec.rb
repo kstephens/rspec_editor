@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'rspec_editor/editor'
-require 'ostruct'
 
 module RspecEditor
   class Editor
