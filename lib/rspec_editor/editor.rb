@@ -67,7 +67,7 @@ module RspecEditor
       cmd = editor_cmd(file, line)
       log "Using editor: #{cmd}"
       begin
-        system! cmd
+        system! cmd if cmd
       rescue
         $stderr.puts "  #{self}: ERROR: #{cmd}: #{$!.inspect}"
       end
@@ -78,6 +78,8 @@ module RspecEditor
       line = nil if line && line.empty?
       editor = self.editor
       case editor
+      when "NONE"
+        cmd = nil
       when /emacs/
         line &&= "+#{line}"
         unless File.exist?(editor)
