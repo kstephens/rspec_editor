@@ -42,7 +42,7 @@ RSpec.describe RspecEditor do
       ENV.keys.grep(/^BUNDLE_/).each{|k| ENV.delete(k)}
       ENV['RSPEC_EDITOR']     = 'NONE'
       ENV['RSPEC_EDITOR_OUT'] = output
-      $stderr.puts " Running: #{cmd}"
+      $stderr.puts "    Running: #{cmd}"
       system cmd
     end
   end
@@ -52,7 +52,6 @@ RSpec.describe RspecEditor do
     rspec_specs = all_installed_gems['rspec']
     specs_matching = rspec_specs.select{|g| version.satisfied_by?(g.version)}
     rspec_version = specs_matching.first.version.to_s
-    # binding.pry
     rspec_version
   end
 
