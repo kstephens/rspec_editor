@@ -2,70 +2,71 @@ require 'rspec_editor'
 
 module RspecEditor
   class Editor
+    attr_accessor :editor, :output_file
+
     def check_enabled!
-      unless editor_enabled?
-        STDERR.puts "  #{self.class} set $RSPEC_EDITOR to enable."
+      unless enabled?
+        log "set $RSPEC_EDITOR to enable."
       end
+      self
     end
 
-    def editor_enabled?
-      ! ! rspec_editor
+    def enabled?
+      ! ! editor
     end
 
-    def rspec_editor
-      (@rspec_editor ||= [ ENV['RSPEC_EDITOR'] ]).first
+    def editor
+      @editor ||= ENV['RSPEC_EDITOR']
     end
 
-    def log_name
-      @log_name = ENV['RSPEC_EDITOR_LOG'] || '.rspec.error.log'
+    def output_file
+      @output_file ||= ENV['RSPEC_EDITOR_OUT'] || '.rspec.error.log'
     end
 
-    def write_examples!
-      @log_name = ".rspec.error.log"
-      log_already_exists = File.exist?(@log_name)
-      File.open("#{@log_name}.tmp", "w") do | fh |
-        @log = fh
-        @log.puts "-*- mode: grep; mode: auto-revert; default-directory: \"#{Dir.pwd}/\" -*-"
-        @log.puts ""
-        yield self
-      end
-      File.rename("#{@log_name}.tmp", @log_name)
-      if log_already_exists
-        $stderr.puts "  # Refresh #{@log_name} in your editor."
+    def current_directory
+      @current_directory ||= Dir.pwd
+    end
+
+    def open
+      @log_already_exists = File.exist?(output_file)
+      @out = File.open(@tmp_file = "#{output_file}.tmp", "w")
+      puts "-*- mode: grep; mode: auto-revert; default-directory: \"#{current_directory}/\" -*-"
+      puts ""
+    end
+
+    def close *args
+      return self unless @out
+      @out.close rescue nil
+      @out = nil
+      File.rename(@tmp_file, output_file)
+      if @log_already_exists
+        log "# Refresh #{output_file} in your editor."
       else
-        editor! @log_name
+        editor! output_file
       end
+      self
     ensure
-      @log = nil
+      @out = @log_already_exists = nil
     end
 
-    def write_example! example
-      location = example.location
-      # location = File.expand_path(example.location)
-      exc = example.execution_result[:exception]
-      exc_desc = exc.inspect.gsub(/\n/, ' ')
-      @log.puts "#{location}: # #{example.full_description}"
-      @log.puts "#{location}: # #{exc_desc}"
-      i = 0
-      format_backtrace(exc.backtrace, example).each do |backtrace_info|
-        # backtrace_info = File.expand_path(backtrace_info)
-        @log.puts "#{backtrace_info}\t # #{i += 1}"
+    def puts msg
+      @out.puts msg
+    end
+
+    def open_example! location
+      if location.to_s =~ /^([^:]+)(:(\d+))?$/
+        file, line = $1, $3
+        editor! file, line
+      else
+        raise ArgumentError, "Invalid location"
       end
-    end
-
-    def open_example! example
-      example.location =~ /^([^:]+)(:(\d+))?$/
-      file, line = $1, $3
-      editor! file, line
     end
 
     def editor! file, line = nil
       cmd = editor_cmd(file, line)
-      output.puts "  Using editor: #{cmd}"
+      log "Using editor: #{cmd}"
       begin
-        Process.fork do
-          system(cmd)
-        end
+        system! cmd
       rescue
         $stderr.puts "  #{self}: ERROR: #{cmd}: #{$!.inspect}"
       end
@@ -74,7 +75,7 @@ module RspecEditor
     def editor_cmd file, line = nil
       file = File.expand_path(file)
       line = nil if line && line.empty?
-      editor = rspec_editor
+      editor = self.editor
       case editor
       when /emacs/
         line &&= "+#{line}"
@@ -90,6 +91,16 @@ module RspecEditor
         cmd = "#{editor} #{line} #{file}"
       end
       cmd
+    end
+
+    def system! cmd
+      Process.fork do
+        system(cmd)
+      end
+    end
+
+    def log msg
+      $stderr.puts "  #{self.class}: #{msg}"
     end
 
     def emacsclient

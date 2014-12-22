@@ -1,111 +1,55 @@
 require "rspec/core/formatters/base_formatter"
 
-class EditorFormatter < RSpec::Core::Formatters::BaseFormatter
-  def initialize *args, &blk
-    super
-    unless editor_enabled?
-      STDERR.puts "  #{self.class} set $RSPEC_EDITOR to enable."
+module RspecEditor
+module Rspec2
+  class Formatter < RSpec::Core::Formatters::BaseFormatter
+    def initialize *args, &blk
+      @editor = Editor.new
+      @editor.check_enabled!
+      super
     end
-  end
 
-  def start_dump
-    result = super
-    return unless editor_enabled?
-    process_examples!
-    result
-  end
+    def start_dump
+      result = super
+      if editor.enabled?
+        begin
+          editor.open
+          process_examples!
+          result
+        ensure
+          editor.close
+        end
+      end
+      result
+    end
 
-  def editor_enabled?
-    ! ! rspec_editor
-  end
+    private
 
-  def rspec_editor
-    (@rspec_editor ||= [ ENV['RSPEC_EDITOR'] ]).first
-  end
+    attr_reader :editor
 
-  private
-
-  def process_examples!
-    @log_name = ".rspec.error.log"
-    log_already_exists = File.exist?(@log_name)
-    File.open("#{@log_name}.tmp", "w") do | fh |
-      @log = fh
-      @log.puts "-*- mode: grep; mode: auto-revert; default-directory: \"#{Dir.pwd}/\" -*-"
-      @log.puts ""
+    def process_examples!
       failed_examples.each do | example |
-        process_example! example
+        write_example! example, editor
       end
     end
-    File.rename("#{@log_name}.tmp", @log_name)
-    if log_already_exists
-      $stderr.puts "  # Refresh #{@log_name} in your editor."
-    else
-      editor! @log_name
-    end
-  ensure
-    @log = nil
-  end
 
-  def process_example! example
-    location = example.location
-    # location = File.expand_path(example.location)
-    exc = example.execution_result[:exception]
-    exc_desc = exc.inspect.gsub(/\n/, ' ')
-    @log.puts "#{location}: # #{example.full_description}"
-    @log.puts "#{location}: # #{exc_desc}"
-    i = 0
-    format_backtrace(exc.backtrace, example).each do |backtrace_info|
-      # backtrace_info = File.expand_path(backtrace_info)
-      @log.puts "#{backtrace_info}\t # #{i += 1}"
-    end
-  end
+    def write_example! example, editor
+      location = example.location
+      # location = File.expand_path(location)
+      editor.puts "#{location}: # #{example.full_description}"
 
-  def open_example! example
-    example.location =~ /^([^:]+)(:(\d+))?$/
-    file, line = $1, $3
-    editor! file, line
-  end
+      exc = example.execution_result[:exception]
+      exc_desc = exc.inspect.gsub(/\n/, ' ')
+      editor.puts "#{location}: # #{exc_desc}"
 
-  def editor! file, line = nil
-    cmd = editor_cmd(file, line)
-    output.puts "  Using editor: #{cmd}"
-    begin
-      Process.fork do
-        system(cmd)
+      i = 0
+      format_backtrace(exc.backtrace, example).each do |backtrace_info|
+        # backtrace_info = File.expand_path(backtrace_info)
+        editor.puts "%70s # %d" % [ backtrace_info.to_s, i += 1 ]
       end
-    rescue
-      $stderr.puts "  #{self}: ERROR: #{cmd}: #{$!.inspect}"
+
+      editor.puts ""
     end
   end
-
-  def editor_cmd file, line = nil
-    file = File.expand_path(file)
-    line = nil if line && line.empty?
-    editor = rspec_editor
-    case editor
-    when /emacs/
-      line &&= "+#{line}"
-      unless File.exist?(editor)
-        editor = emacsclient
-      end
-      cmd = "#{editor} -q -n #{line} #{file}"
-    when /vi/
-      line &&= "+#{line}"
-      cmd = "#{editor} --remote #{line} #{file}"
-    else
-      line &&= "--line #{line}"
-      cmd = "#{editor} #{line} #{file}"
-    end
-    cmd
-  end
-
-  def emacsclient
-    @emacsclient ||=
-    [
-      '/Applications/Aquamacs.app/Contents/MacOS/bin/emacsclient',
-      '/opt/local/bin/emacsclient',
-      '/usr/bin/emacsclient',
-    ].find{|f| File.executable? f} || 'emacsclient'
-  end
-
+end
 end
