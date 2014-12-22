@@ -1,6 +1,11 @@
 # RspecEditor
 
-TODO: Write a gem description
+RSpec 2 and 3 Formatter that interfaces with your editor: emacs, vim,
+etc.
+
+Writes a file that can be interpreted as `grep -n` output.
+Then invokes your editor.
+Works well with emacs.
 
 ## Installation
 
@@ -20,11 +25,13 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+   $ export RSPEC_EDITOR=emacsclient
+   $ export RSPEC_EDITOR_OUT=rspec.errors.log
+   $ rspec -require rspec_editor -f d -f RspecEditor::Formatter
 
 ## Contributing
 
-1. Fork it ( https://github.com/[my-github-username]/rspec_editor/fork )
+1. Fork it ( https://github.com/kstephens/rspec_editor/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
