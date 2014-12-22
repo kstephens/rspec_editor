@@ -1,4 +1,4 @@
-require "rspec/core/formatters/base_formatter"
+require "rspec/core/formatters/base_text_formatter"
 
 module RspecEditor
 module Rspec3
@@ -20,6 +20,7 @@ module Rspec3
 
     def example_failed failure
       return unless @editor.enabled?
+      @editor.open
 
       example = failure.example
       # location = File.expand_path(location)
