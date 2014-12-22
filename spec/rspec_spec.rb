@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'rspec_editor'
 
 RSpec.describe RspecEditor do
-  let(:output) { "tmp.#{$$}.log" }
+  let(:output) { "tmp/test.#{$$}.log" }
   let(:output_content) { File.read(output) }
   after { File.unlink(output) rescue nil }
 

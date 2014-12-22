@@ -13,7 +13,7 @@ module RspecEditor
         end
         obj
       end
-      let(:output_file) { "#{$$}.log" }
+      let(:output_file) { "tmp/test.#{$$}.log" }
       after { File.unlink(output_file) rescue nil }
       let(:output_file_content) { File.read(output_file) }
 
