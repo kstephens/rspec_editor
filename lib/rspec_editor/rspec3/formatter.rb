@@ -3,19 +3,24 @@ require "rspec/core/formatters/base_formatter"
 module RspecEditor
 module Rspec3
   class Formatter < RSpec::Core::Formatters::BaseTextFormatter
-    RSpec::Core::Formatters.register self, :example_failed, :close
+    RSpec::Core::Formatters.register self, :open, :example_failed, :close
 
     def initialize *args
       super(nil)
       @editor = Editor.new
       @editor.check_enabled!
+    end
+    attr_reader :failed_examples
+
+    def open *args
       if @editor.enabled?
         @editor.open
       end
     end
-    attr_reader :failed_examples
 
     def example_failed failure
+      return unless @editor.enabled?
+
       example = failure.example
       # location = File.expand_path(location)
       location = example.location

@@ -28,6 +28,7 @@ module RspecEditor
     end
 
     def open
+      return if @out
       @log_already_exists = File.exist?(output_file)
       @out = File.open(@tmp_file = "#{output_file}.tmp", "w")
       puts "-*- mode: grep; mode: auto-revert; default-directory: \"#{current_directory}/\" -*-"

@@ -20,8 +20,6 @@ module RspecEditor
       context "editor = emacs" do
         let(:editor) { "emacs" }
         it "writes an output file" do
-          raise "DIE!!!"
-
           subject.open
           subject.puts "FOO"
           subject.close

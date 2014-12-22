@@ -1,3 +1,5 @@
+require 'rspec/version'
+
 module RspecEditor
   case RSpec::Version::STRING
   when /^2\./
