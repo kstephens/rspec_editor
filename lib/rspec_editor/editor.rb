@@ -78,7 +78,7 @@ module RspecEditor
       line = nil if line && line.empty?
       editor = self.editor
       case editor
-      when "NONE"
+      when ""
         cmd = nil
       when /emacs/
         line &&= "+#{line}"

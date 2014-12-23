@@ -28,31 +28,31 @@ RSpec.describe RspecEditor do
     expect(output_content) .to match(/mode: grep;/m)
     expect(output_content) .to match(/mode: auto-revert;/m)
     expect(output_content) .to match(/default-directory: /m)
-    expect(output_content) .to match(/_spec_example.rb:\d+: # RSpec \d fails/m)
+    expect(output_content) .to match(/_spec_example.rb:\d+: # RSpec \d logs a failure/m)
   end
 
   def run_rspec!
     run_cmd! "rspec '_#{rspec_version}_' -I '#{RspecEditor.root_dir}/lib' --require rspec/version --require rspec_editor -f RspecEditor::Formatter #{spec}"
   end
 
-  let(:rspec_version) { gem_version version }
+  let(:rspec_version) { gem_version 'rspec', version }
 
   def run_cmd! cmd
     Bundler.with_clean_env do
       ENV.keys.grep(/^BUNDLE_/).each{|k| ENV.delete(k)}
-      ENV['RSPEC_EDITOR']     = 'NONE'
+      ENV['RSPEC_EDITOR']     = ''
       ENV['RSPEC_EDITOR_OUT'] = output
       $stderr.puts "    Running: #{cmd}"
       system cmd
     end
   end
 
-  def gem_version version
+  def gem_version name, version
     version = Gem::Requirement.new(version)
-    rspec_specs = all_installed_gems['rspec']
-    specs_matching = rspec_specs.select{|g| version.satisfied_by?(g.version)}
-    rspec_version = specs_matching.first.version.to_s
-    rspec_version
+    specs = all_installed_gems[name]
+    specs_matching = specs.select{|g| version.satisfied_by?(g.version)}
+    version = specs_matching.first.version.to_s
+    version
   end
 
   # http://stackoverflow.com/questions/5177634/list-of-installed-gems
