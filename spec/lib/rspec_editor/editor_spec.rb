@@ -8,8 +8,8 @@ module RspecEditor
         obj = Editor.new
         obj.editor = editor
         obj.output_file = output_file
-        def obj.system! cmd
-        end
+        def obj.system! cmd ; @system = cmd ; end
+        def obj.system ; @system ; end
         obj
       end
       let(:output_file) { "tmp/test.#{$$}.log" }
@@ -25,6 +25,20 @@ module RspecEditor
 
           expect(output_file_content) .to include("-*- mode: grep")
           expect(output_file_content) .to include("FOO")
+          expect(subject.system) .to match(%r{/emacsclient -q -n })
+        end
+      end
+
+      context "editor = vim" do
+        let(:editor) { "vim" }
+        it "writes an output file" do
+          subject.open
+          subject.puts "FOO"
+          subject.close
+
+          expect(output_file_content) .to include("-*- mode: grep")
+          expect(output_file_content) .to include("FOO")
+          expect(subject.system) .to match(%r{vim --remote })
         end
       end
     end
